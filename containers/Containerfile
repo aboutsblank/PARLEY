@@ -1,0 +1,46 @@
+FROM debian:stable-slim
+
+ARG prism_version="4.10.1"
+
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
+    && apt-get install -y \
+    git \
+    maven \ 
+    openjdk-21-jdk \
+    python3 \
+    python3-pip \
+    python3-venv \
+    wget \
+    && apt-get clean
+
+WORKDIR /opt
+
+RUN git clone https://github.com/gerasimou/EvoChecker.git EvoChecker \
+    && cd EvoChecker \
+    && mvn install \
+    && rm -rf ~/.m2
+
+RUN ARCH=$(uname -m) && \
+    case "$ARCH" in \
+    x86_64) PRISM_ARCH="x86" ;; \
+    aarch64) PRISM_ARCH="arm" ;;\
+    esac \
+    && wget -q -O - https://www.prismmodelchecker.org/dl/prism-${prism_version}-linux64-$PRISM_ARCH.tar.gz | tar -xzf - -C /opt \
+    && mv /opt/prism-* /opt/prism \
+    && cd /opt/prism \
+    && /opt/prism/install.sh \
+    && ln -s /opt/prism/bin/prism /usr/local/bin/prism \
+    && ln -s /opt/prism/bin/xprism /usr/local/bin/xprism \
+    && ln -s /opt/prism/bin/ngprism /usr/local/bin/ngprism \
+    && echo 'export PATH=${PATH}:/opt/prism/bin' >> ~/.bashrc \
+    && ln -s "$(which python3)" /usr/bin/python
+
+WORKDIR /opt/PARLEY
+COPY requirements.txt /opt/PARLEY
+
+RUN python3 -m venv .venv \
+    && .venv/bin/pip install -r requirements.txt
+
+# import PARLEY
+# install dependencies
