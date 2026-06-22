@@ -2,24 +2,32 @@ FROM debian:stable-slim
 
 ARG prism_version="4.10.1"
 
-RUN export DEBIAN_FRONTEND=noninteractive \
+# Setup Basics
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    export DEBIAN_FRONTEND=noninteractive \
     && apt-get update \
-    && apt-get install -y \
+    && apt-get --no-install-recommends install -y \
     git \
     maven \ 
-    openjdk-21-jdk \
+    openjdk-21-jre \
     python3 \
     python3-pip \
     python3-venv \
     wget \
     && apt-get clean
 
+# Setup EvoChecker
+
 WORKDIR /opt
 
-RUN git clone https://github.com/gerasimou/EvoChecker.git EvoChecker \
+RUN --mount=type=cache,target=/root/.m2 \
+    git clone https://github.com/gerasimou/EvoChecker.git EvoChecker \
     && cd EvoChecker \
-    && mvn install \
-    && rm -rf ~/.m2
+    && mvn install
+
+# Setup PRISM
 
 RUN ARCH=$(uname -m) && \
     case "$ARCH" in \
@@ -36,11 +44,14 @@ RUN ARCH=$(uname -m) && \
     && echo 'export PATH=${PATH}:/opt/prism/bin' >> ~/.bashrc \
     && ln -s "$(which python3)" /usr/bin/python
 
-WORKDIR /opt/PARLEY
-COPY requirements.txt /opt/PARLEY
 
-RUN python3 -m venv .venv \
+# Setup PARLEY
+
+WORKDIR /opt/PARLEY
+COPY requirements.txt .
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python3 -m venv .venv \
     && .venv/bin/pip install -r requirements.txt
 
-# import PARLEY
-# install dependencies
+# TODO import rest of PARLEY and Setup experiment structure
