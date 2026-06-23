@@ -1,0 +1,4 @@
+FROM parley-base
+
+# TODO import rest of PARLEY and Setup experiment structure
+# hot loading of current scripts i.e. mount as volume

@@ -1,0 +1,4 @@
+FROM parley-base
+
+# TODO import rest of PARLEY and Setup experiment structure
+# copy all scripts at startup as artifact before and run an experiment
